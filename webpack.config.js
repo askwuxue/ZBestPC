@@ -3,6 +3,9 @@ const path = require("path");
 const webpack = require("webpack"); // 用于访问内置插件
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = {
   mode: "development",
@@ -24,11 +27,31 @@ module.exports = {
     hot: true,
     port: 8080,
   },
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new CssMinimizerPlugin(),
+      new TerserPlugin({
+        test: /\.js(\?.*)?$/i,
+      }),
+    ],
+    splitChunks: {
+      chunks: "all",
+      minSize: 200 * 1024,
+      cacheGroups: {
+        vendors: {
+          name: "jquery.chunk",
+          test: /[\\/]node_modules[\\/]/,
+          priority: -10,
+        },
+      },
+    },
+  },
   module: {
     rules: [
       {
         test: /\.css$/,
-        use: ["style-loader", "css-loader"],
+        use: [MiniCssExtractPlugin.loader, "css-loader"],
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
@@ -46,6 +69,10 @@ module.exports = {
     ],
   },
   plugins: [
+    new MiniCssExtractPlugin({
+      filename: "css/[name].[hash:8].css",
+      chunkFilename: "css/[name].chunk.[hash:8].css",
+    }),
     new CopyPlugin({
       patterns: [
         {
